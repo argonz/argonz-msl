@@ -1,3 +1,0 @@
-;; element hash
-(ns ehash
-  (:refer-clojure))
