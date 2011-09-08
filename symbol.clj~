@@ -1,0 +1,4 @@
+
+;; concat-string (str "Sfad" "Fdsafda")
+(defn concat-syms [& syms]
+  (symbol (apply str (map #(.getName %) syms))))

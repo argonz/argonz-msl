@@ -1,0 +1,104 @@
+(ns msl.seq-numerical
+  (:refer-clojure)
+  (:refer msl)
+  (:use clojure.contrib.math))
+
+;; ezeket igazabol macroval meg lehetne csinalni :)
+;; sequence operators
+(defn seq-*-n [seq n]
+  (map #(* % n) seq))
+(defn seq-div-n [seq n]
+  (map #(/ % n) seq))
+(defn seq-+-n [seq n]
+  (map #(+ % n) seq))
+(defn seq-sub-n [seq n]
+  (map #(- % n) seq))
+(defn seq-pow-n [seq n]
+  (map #(Math/pow % n) seq))
+
+(defn seq-+-seq [seq0 seq1]
+  (map #(+ %1 %2) seq0 seq1))
+(defn seq-sub-seq [seq0 seq1]
+  (map #(- %1 %2) seq0 seq1))
+(defn seq-*-seq [seq0 seq1]
+  (map #(* %1 %2) seq0 seq1))
+(defn seq-div-seq [seq0 seq1]
+  (map #(/ %1 %2) seq0 seq1))
+(defn seq-pow-seq [seq0 seq1]
+  (map #(Math/pow %1 %2) seq0 seq1))
+
+(defn summa [seq]
+  (reduce + seq))
+
+
+
+(defn avg [seq]
+  (/ (reduce + seq) (count seq)))
+(defn variance [seq]
+  (avg (map (fn [s] (Math/abs s)) (seq-sub-n seq (avg seq)))))
+(defn exp-var [seq]
+  (Math/pow (summa (seq-pow-n (seq-sub-n seq (avg seq)) 2))
+	    (/ 1 2)))
+(defn mss [seq]				;mean square sum :D
+  (/ (reduce + (map (fn [s] (Math/pow s 2)) seq))
+     (count seq)))
+(defn mse [seq0 seq1]
+  (/ (reduce + (map (fn [s] (Math/pow s 2)) (seq-sub-seq seq0 seq1)))
+     (count seq0)))
+
+(defn seqs-summa [seqs]
+  (reduce seq-+-seq seqs))
+(defn seqs-avg-seq [seqs]
+  (seq-div-n (seqs-summa seqs) (count seqs)))
+
+;; distance
+(defn seq-magnitude-n [seq n]
+  (expt (reduce + (map #(expt % n) (map abs seq)))
+	(/ 1.0 n)))
+(defn seq-distance-n [seq0 seq1 n]
+  (seq-magnitude-n (map - seq0 seq1) n))
+
+(defn seq-magnitude [seq]
+  (Math/sqrt (reduce + (map #(* % %) seq))))
+(defn seq-normalize [seq]
+  (seq-div-n seq (seq-magnitude seq)))
+(defn seq-unitize [seq]
+  (seq-div-n seq (seq-magnitude seq)))  
+
+(defn seq-scalar-prod [seq0 seq1]
+  (reduce + (map * seq0 seq1)))
+
+
+(defn seq-distance [seq0 seq1]
+  (seq-magnitude (seq-sub-seq seq0 seq1)))
+(defn seq-displacement [seq0 seq1]
+  (seq-sub-seq seq1 seq0))
+(defn seq-direction [seq0 seq1]
+  (seq-unitize (seq-displacement seq1 seq0)))
+
+
+;; kullbach leibler distance
+(defn self-inf [p0 p1]
+  (. Math log (/ p0 p1)))  
+(defn seq-dkl [seq0 seq1]
+  (reduce + (map #(* %1 (self-inf %1 %2)) seq0 seq1)))
+(defn bin-prob-dkl [p0 p1]
+  (seq-dkl (list p0 (- 1 p0)) (list p1 (- 1 p1))))
+(defn bin-prob-seq-dkl [seq0 seq1]
+  (reduce + (map abs (map #(bin-prob-dkl %1 %2) seq0 seq1))))
+  
+
+;; symmetric absolute dist
+(defn seq-sdkl [seq0 seq1]
+  (/ (+ (seq-dkl seq0 seq1) (seq-dkl seq1 seq0))
+     2.0))
+(defn bin-prob-sdkl [p0 p1]
+  (seq-sdkl (list p0 (- 1 p0)) (list p1 (- 1 p1))))
+(defn bin-prob-seq-sdkl [seq0 seq1]
+  (reduce + (map abs (map #(bin-prob-sdkl %1 %2) seq0 seq1))))
+(defn bin-prob-seq-2norm-sdkl [seq0 seq1]
+  (seq-distance (map #(bin-prob-sdkl %1 %2) seq1 seq0)
+		(map #(bin-prob-sdkl %1 %2) seq0 seq1)
+		2.0))
+
+
